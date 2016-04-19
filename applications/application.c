@@ -112,7 +112,7 @@ int rt_application_init(void)
 {
     rt_thread_t init_thread;
 
-	zigbee_task_init("uart1");
+	remote_task_init("uart1");
 	
 #if (RT_THREAD_PRIORITY_MAX == 32)
     init_thread = rt_thread_create("init",
