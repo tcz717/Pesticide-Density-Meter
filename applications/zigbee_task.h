@@ -24,6 +24,13 @@ typedef struct
 	uint32_t id1;
 	uint32_t id2;
 } handshack_t; 
+typedef struct 
+{
+	uint32_t id0;
+	uint32_t id1;
+	uint32_t id2;
+	uint8_t id;
+} handshack_re_t;
 struct remote_msg
 {
 	struct
@@ -36,10 +43,7 @@ struct remote_msg
 	{
 		uint8_t * raw;
 		handshack_t *handshack;
-		struct 
-		{
-			uint8_t id;
-		} *handshack_re;
+		handshack_re_t *handshack_re;
 	} content;
 	uint8_t sum;
 };
