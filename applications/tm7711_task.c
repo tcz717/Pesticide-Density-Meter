@@ -1,6 +1,9 @@
 #include "tm7711.h"
+#include "zigbee_task.h"
 
-#define AVG_TIME            5
+#define TM7711_AD_AVE       0
+
+#define AVE_TIME            5
 
 #define TM7711_TICK			2
 #define TM7711_PRIORITY		6
@@ -14,14 +17,15 @@ static void task(void * parameter)
     while(1)
     {
         uint32_t sum = 0;
-        for(int i = 0; i < AVG_TIME; i++)
+        for(int i = 0; i < AVE_TIME; i++)
         {
             uint32_t v;
             TM7711_GetAD(&v, TM7711_MODE_AD_10HZ);
             sum += v;
         }
         
-        sum /= AVG_TIME;
+        sum /= AVE_TIME;
+        remote_set_value(TM7711_AD_AVE ,sum);
     }
 }
 void tm7711_task_init()

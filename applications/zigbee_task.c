@@ -188,6 +188,15 @@ rt_err_t remote_error(uint8_t code)
 	};
 	return send_msg(&msg);
 }
+
+void remote_set_value(uint8_t id, uint32_t value)
+{
+    if(id < REMOTE_VALUE_COUNT)
+    {
+        value_table[id] = value;
+    }
+}
+
 static void task(void * parameter)
 {
 	struct remote_msg msg;
