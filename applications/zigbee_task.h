@@ -34,6 +34,10 @@ typedef struct
 {
 	uint8_t is_ans;
 } ping_t;
+typedef struct 
+{
+	uint8_t code;
+} error_t;
 struct remote_msg
 {
 	struct
@@ -48,6 +52,7 @@ struct remote_msg
 		handshack_t *handshack;
 		handshack_re_t *handshack_re;
         ping_t *ping;
+        error_t *error;
 	} content;
 	uint8_t sum;
 };

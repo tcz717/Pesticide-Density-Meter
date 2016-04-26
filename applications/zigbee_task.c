@@ -7,6 +7,7 @@ static unsigned char msg_buf[256];
 static rt_device_t uart;
 static struct rt_thread remote_thread;
 static struct rt_semaphore uart_rx_sem;
+static struct rt_mutex remote_tx_mut;
 ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t remote_stack[ 768 ];
 
@@ -20,10 +21,18 @@ void get_chip_id(handshack_t * h)
 }
 static rt_err_t send_msg(struct remote_msg * msg)
 {
-	rt_device_write(uart,0,&msg->head,3);
-	rt_device_write(uart,0,msg->content.raw,msg->head.len);
-	rt_device_write(uart,0,&msg->sum,1);
-	return RT_EOK;
+    if(local_id == 0 && msg->head.cmd != REMOTE_HANDSHAKE)
+        return -RT_ERROR;
+    
+    if(rt_mutex_take(&remote_tx_mut, 20) == RT_EOK)
+    {
+        rt_device_write(uart,0,&msg->head,3);
+        rt_device_write(uart,0,msg->content.raw,msg->head.len);
+        rt_device_write(uart,0,&msg->sum,1);
+        return RT_EOK;
+    }
+    else
+        return -RT_EBUSY;
 }
 uint8_t get_sum(unsigned char * data,int size)
 {
@@ -45,7 +54,7 @@ rt_err_t handshack_handle(struct remote_msg * msg)
 		local_id = msg->content.handshack_re->id;
 		return RT_EOK;
 	}
-	return RT_ERROR;
+	return -RT_ERROR;
 }
 rt_err_t ping_handle(struct remote_msg * msg)
 {
@@ -72,6 +81,8 @@ static const msg_handle handles[REMOTE_CMD_COUNT] =
 {
 	RT_NULL,
 	handshack_handle,
+    ping_handle,
+    RT_NULL,
 };
 
 
@@ -109,7 +120,7 @@ static rt_err_t receive_msg(struct remote_msg * msg)
 		readf((uint8_t*)&msg->head,3);
 		
 		if(!IS_REMOTE_CMD(msg->head.cmd))
-			return RT_ERROR;
+			return -RT_ERROR;
 		
 		readf(msg_buf, msg->head.len);
 		msg->content.raw=msg_buf;
@@ -118,12 +129,12 @@ static rt_err_t receive_msg(struct remote_msg * msg)
 		if(msg->head.id!=local_id)
 			continue;
 		if(msg->sum!=get_sum(msg->content.raw,msg->head.len))
-			return RT_ERROR;
+			return -RT_ERROR;
 		
 		return handles[msg->head.cmd](msg);
 	}
 }
-static rt_err_t handshack()
+rt_err_t remote_handshack()
 {
 	rt_err_t err;
 	handshack_t h;
@@ -139,13 +150,26 @@ static rt_err_t handshack()
 	};
 	send_msg(&msg);
 	
-	err=receive_msg(&msg);
+	err = receive_msg(&msg);
 	return err;
+}
+rt_err_t remote_error(uint8_t code)
+{
+    error_t error = {code};
+	struct remote_msg msg=
+	{
+		REMOTE_HANDSHAKE_SIZE,
+		0,
+		REMOTE_HANDSHAKE,
+		(uint8_t *)&error,
+		get_sum((uint8_t *)&error,sizeof(error_t)),
+	};
+	return send_msg(&msg);
 }
 static void task(void * parameter)
 {
 	struct remote_msg msg;
-	while(handshack()!=RT_EOK)
+	while(remote_handshack()!=RT_EOK)
 	{
 		rt_thread_delay(500);
 	}
@@ -159,6 +183,7 @@ static void task(void * parameter)
 void remote_task_init(const char * uart_name)
 {
 	rt_sem_init(&uart_rx_sem,"uart_rx",0,RT_IPC_FLAG_FIFO);
+	rt_mutex_init(&remote_tx_mut,"remo_tx", RT_IPC_FLAG_FIFO);
 	
 	rt_thread_init(&remote_thread,
 		"remote",
