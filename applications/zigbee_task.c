@@ -8,13 +8,65 @@ static rt_device_t uart;
 static struct rt_thread remote_thread;
 static struct rt_semaphore uart_rx_sem;
 ALIGN(RT_ALIGN_SIZE)
-static rt_uint8_t remote_stack[ 1024 ];
+static rt_uint8_t remote_stack[ 768 ];
 
 unsigned char local_id;
+void get_chip_id(handshack_t * h)
+{
+	uint32_t * base = (uint32_t *)0x1FFFF7E8;
+	h->id0=*(base++);
+	h->id1=*(base++);
+	h->id2=*(base++);
+}
+static rt_err_t send_msg(struct remote_msg * msg)
+{
+	rt_device_write(uart,0,&msg->head,3);
+	rt_device_write(uart,0,msg->content.raw,msg->head.len);
+	rt_device_write(uart,0,&msg->sum,1);
+	return RT_EOK;
+}
+uint8_t get_sum(unsigned char * data,int size)
+{
+	uint8_t sum=0;
+	for(int i=0;i<size;i++)
+	{
+		sum+=data[i];
+	}
+	return sum;
+}
 rt_err_t handshack_handle(struct remote_msg * msg)
 {
-	local_id = msg->content.handshack_re->id;
-	return RT_EOK;
+	handshack_t id;
+	get_chip_id(&id);
+	if(id.id0 == msg->content.handshack_re->id0 &&
+	   id.id1 == msg->content.handshack_re->id1 &&
+	   id.id2 == msg->content.handshack_re->id2)
+	{
+		local_id = msg->content.handshack_re->id;
+		return RT_EOK;
+	}
+	return RT_ERROR;
+}
+rt_err_t ping_handle(struct remote_msg * msg)
+{
+    if(msg->content.ping->is_ans)
+    {
+        //TODO: update alive state
+    }
+    else
+    {
+        ping_t ping = {1};
+        struct remote_msg ans =
+        {
+            REMOTE_HANDSHAKE_SIZE,
+            0,
+            REMOTE_HANDSHAKE,
+            (uint8_t *)&ping,
+            get_sum((uint8_t *)&ping,sizeof(ping_t)),
+        };
+        send_msg(&ans);
+    }
+    return RT_EOK;
 }
 static const msg_handle handles[REMOTE_CMD_COUNT] =
 {
@@ -50,23 +102,6 @@ rt_err_t readf(unsigned char * buffer,int size)
 	}
 	return RT_EOK;
 }
-
-uint8_t get_sum(unsigned char * data,int size)
-{
-	uint8_t sum=0;
-	for(int i=0;i<size;i++)
-	{
-		sum+=data[i];
-	}
-	return sum;
-}
-static rt_err_t send_msg(struct remote_msg * msg)
-{
-	rt_device_write(uart,0,&msg->head,3);
-	rt_device_write(uart,0,msg->content.raw,msg->head.len);
-	rt_device_write(uart,0,&msg->sum,1);
-	return RT_EOK;
-}
 static rt_err_t receive_msg(struct remote_msg * msg)
 {
 	while(1)
@@ -87,13 +122,6 @@ static rt_err_t receive_msg(struct remote_msg * msg)
 		
 		return handles[msg->head.cmd](msg);
 	}
-}
-void get_chip_id(handshack_t * h)
-{
-	uint32_t * base = (uint32_t *)0x1FFFF7E8;
-	h->id0=*(base++);
-	h->id1=*(base++);
-	h->id2=*(base++);
 }
 static rt_err_t handshack()
 {

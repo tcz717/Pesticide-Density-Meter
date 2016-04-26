@@ -4,7 +4,6 @@
 #include <components.h>
 #include <board.h>
 
-
 #define REMOTE_HANDSHAKE			0
 #define REMOTE_HANDSHAKE_RESPONSE	1
 #define REMOTE_PING					2
@@ -31,6 +30,10 @@ typedef struct
 	uint32_t id2;
 	uint8_t id;
 } handshack_re_t;
+typedef struct 
+{
+	uint8_t is_ans;
+} ping_t;
 struct remote_msg
 {
 	struct
@@ -44,6 +47,7 @@ struct remote_msg
 		uint8_t * raw;
 		handshack_t *handshack;
 		handshack_re_t *handshack_re;
+        ping_t *ping;
 	} content;
 	uint8_t sum;
 };
