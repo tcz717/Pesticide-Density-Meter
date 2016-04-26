@@ -12,6 +12,9 @@ ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t remote_stack[ 768 ];
 
 unsigned char local_id;
+
+static uint32_t value_table[REMOTE_VALUE_COUNT];
+
 void get_chip_id(handshack_t * h)
 {
 	uint32_t * base = (uint32_t *)0x1FFFF7E8;
@@ -43,7 +46,7 @@ uint8_t get_sum(unsigned char * data,int size)
 	}
 	return sum;
 }
-rt_err_t handshack_handle(struct remote_msg * msg)
+static rt_err_t handshack_handle(struct remote_msg * msg)
 {
 	handshack_t id;
 	get_chip_id(&id);
@@ -56,7 +59,7 @@ rt_err_t handshack_handle(struct remote_msg * msg)
 	}
 	return -RT_ERROR;
 }
-rt_err_t ping_handle(struct remote_msg * msg)
+static rt_err_t ping_handle(struct remote_msg * msg)
 {
     if(msg->content.ping->is_ans)
     {
@@ -77,12 +80,31 @@ rt_err_t ping_handle(struct remote_msg * msg)
     }
     return RT_EOK;
 }
+static rt_err_t get_value_handle(struct remote_msg * msg)
+{
+    uint8_t id = msg->content.get_value->id;
+    if(id < REMOTE_VALUE_COUNT)
+    {
+        get_value_re_t get_value_re = {id, value_table[id]};
+        struct remote_msg ans =
+        {
+            REMOTE_HANDSHAKE_SIZE,
+            0,
+            REMOTE_HANDSHAKE,
+            (uint8_t *)&get_value_re,
+            get_sum((uint8_t *)&get_value_re,sizeof(get_value_re_t)),
+        };
+        send_msg(&ans);
+    }
+    return -RT_ENOSYS;
+}
 static const msg_handle handles[REMOTE_CMD_COUNT] =
 {
 	RT_NULL,
 	handshack_handle,
     ping_handle,
     RT_NULL,
+    get_value_handle,
 };
 
 

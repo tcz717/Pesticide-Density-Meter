@@ -17,6 +17,8 @@
 #define REMOTE_CMD_COUNT			8
 #define IS_REMOTE_CMD(C) ((C) <= REMOTE_CLOSE)
 
+#define REMOTE_VALUE_COUNT			8
+
 typedef struct 
 {
 	uint32_t id0;
@@ -38,6 +40,15 @@ typedef struct
 {
 	uint8_t code;
 } error_t;
+typedef struct 
+{
+	uint8_t id;
+} get_value_t;
+typedef struct 
+{
+	uint8_t id;
+    uint32_t value;
+} get_value_re_t;
 struct remote_msg
 {
 	struct
@@ -53,6 +64,8 @@ struct remote_msg
 		handshack_re_t *handshack_re;
         ping_t *ping;
         error_t *error;
+        get_value_t *get_value;
+        get_value_re_t *get_value_re;
 	} content;
 	uint8_t sum;
 };
