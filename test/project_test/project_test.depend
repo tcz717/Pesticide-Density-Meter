@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1461430102 source:e:\code\embedded\zigbee-dense\test\project_test\main.c
+	<stdio.h>
+	<stdlib.h>
+	"zigbee_task.h"
+	"stdbool.h"
+
+1461427029 e:\code\embedded\zigbee-dense\test\project_test\zigbee_task.h
+	"rtdef.h"
+	"stdint.h"
+
+1461426945 e:\code\embedded\zigbee-dense\test\project_test\rtdef.h
+	"..\..\rtconfig.h"
+	<stdarg.h>
+	<stdarg.h>
+	<stdarg.h>
+	<stdarg.h>
+	<stdarg.h>
+	<stdarg.h>
+
+1460214677 e:\code\embedded\zigbee-dense\rtconfig.h
+
+1461429027 source:e:\code\embedded\zigbee-dense\test\project_test\zigbee_task.c
+	"zigbee_task.h"
+	"stdio.h"
+
