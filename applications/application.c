@@ -112,6 +112,8 @@ int rt_application_init(void)
 {
     rt_thread_t init_thread;
 
+    extern void tm7711_task_init(void);
+    tm7711_task_init();
 	remote_task_init("uart1");
 	
 #if (RT_THREAD_PRIORITY_MAX == 32)
