@@ -12,6 +12,9 @@
 #define TM7711_GPIO                 GPIOB
 #define TM7711_RCC_GPIO             RCC_APB2Periph_GPIOB
 
+#define TIMER                       TIM4
+#define TIMER_WAIT                  5 
+
 static struct rt_semaphore din_sem;
 static rt_bool_t handled = RT_TRUE;
 
@@ -60,6 +63,8 @@ void TM7711_Init()
     GPIO_Configure();
     EXTI_Configure();
     NVIC_Configure();
+    
+    timer_init(TIMER);
 }
 
 void TM7711_Awake()
@@ -74,7 +79,7 @@ static int32_t read24()
     {
         GPIO_SetBits(TM7711_GPIO, CLK_PIN);
         
-        for(int j=0;j<100;j++) __nop();
+        delay_us(TIMER, TIMER_WAIT);
         
         value <<= 1;
         value |= GPIO_ReadInputDataBit(TM7711_GPIO, DIN_PIN) != 0;
@@ -90,20 +95,22 @@ void set_mode(uint8_t mode)
     for (int i = 0; i < mode; i++)
     {
         GPIO_SetBits(TM7711_GPIO, CLK_PIN);
-        for(int j=0;j<100;j++) __nop();
+        delay_us(TIMER, TIMER_WAIT);
         GPIO_ResetBits(TM7711_GPIO, CLK_PIN);
     }
 }
 
-rt_err_t TM7711_GetAD(int32_t * result, uint8_t mode)
+rt_err_t TM7711_GetAD(uint32_t * result, uint8_t mode)
 {
     TM7711_Awake();
 	if(rt_sem_take(&din_sem,RT_WAITING_FOREVER)==RT_EOK)
 	{
         *result = read24();
         set_mode(mode);
+        handled = RT_TRUE;
         return RT_EOK;
 	}
+    handled = RT_TRUE;
     return RT_EIO;
 }
 
@@ -113,7 +120,10 @@ void EXTI6_IRQHandler(void)
     rt_interrupt_enter();
 
     if(handled)
+    {
+        handled = RT_FALSE;
         rt_sem_release(&din_sem);
+    }
     /* Clear the DM9000A EXTI line pending bit */
     EXTI_ClearITPendingBit(DIN_EXTI_LINE);
 
