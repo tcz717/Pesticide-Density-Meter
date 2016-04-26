@@ -42,7 +42,7 @@ uint8_t get_sum(unsigned char * data,int size)
 	uint8_t sum=0;
 	for(int i=0;i<size;i++)
 	{
-		sum+=data[i];
+		sum += data[i];
 	}
 	return sum;
 }
@@ -71,7 +71,7 @@ static rt_err_t ping_handle(struct remote_msg * msg)
         struct remote_msg ans =
         {
             REMOTE_HANDSHAKE_SIZE,
-            0,
+            local_id,
             REMOTE_HANDSHAKE,
             (uint8_t *)&ping,
             get_sum((uint8_t *)&ping,sizeof(ping_t)),
@@ -89,7 +89,7 @@ static rt_err_t get_value_handle(struct remote_msg * msg)
         struct remote_msg ans =
         {
             REMOTE_HANDSHAKE_SIZE,
-            0,
+            local_id,
             REMOTE_HANDSHAKE,
             (uint8_t *)&get_value_re,
             get_sum((uint8_t *)&get_value_re,sizeof(get_value_re_t)),
@@ -145,7 +145,7 @@ static rt_err_t receive_msg(struct remote_msg * msg)
 			return -RT_ERROR;
 		
 		readf(msg_buf, msg->head.len);
-		msg->content.raw=msg_buf;
+		msg->content.raw = msg_buf;
 		msg->sum = getc();
 		
 		if(msg->head.id!=local_id)
@@ -181,7 +181,7 @@ rt_err_t remote_error(uint8_t code)
 	struct remote_msg msg=
 	{
 		REMOTE_HANDSHAKE_SIZE,
-		0,
+		local_id,
 		REMOTE_HANDSHAKE,
 		(uint8_t *)&error,
 		get_sum((uint8_t *)&error,sizeof(error_t)),
