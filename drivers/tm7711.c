@@ -12,7 +12,7 @@
 #define TM7711_GPIO                 GPIOB
 #define TM7711_RCC_GPIO             RCC_APB2Periph_GPIOB
 
-#define TIMER                       TIM4
+#define TIMER                       TIM6
 #define TIMER_WAIT                  5 
 
 static struct rt_semaphore din_sem;
