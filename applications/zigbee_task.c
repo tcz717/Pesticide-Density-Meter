@@ -83,20 +83,26 @@ static rt_err_t ping_handle(struct remote_msg * msg)
 static rt_err_t get_value_handle(struct remote_msg * msg)
 {
     uint8_t id = msg->content.get_value->id;
+    get_value_re_t get_value_re = {id};
     if(id < REMOTE_VALUE_COUNT)
     {
-        get_value_re_t get_value_re = {id, value_table[id]};
-        struct remote_msg ans =
-        {
-            REMOTE_HANDSHAKE_SIZE,
-            local_id,
-            REMOTE_HANDSHAKE,
-            (uint8_t *)&get_value_re,
-            get_sum((uint8_t *)&get_value_re,sizeof(get_value_re_t)),
-        };
-        send_msg(&ans);
+        get_value_re.value = value_table[id];
     }
-    return -RT_ENOSYS;
+    else
+    {
+        get_value_re.value = 0;
+    }
+    
+    struct remote_msg ans =
+    {
+        REMOTE_HANDSHAKE_SIZE,
+        local_id,
+        REMOTE_HANDSHAKE,
+        (uint8_t *)&get_value_re,
+        get_sum((uint8_t *)&get_value_re,sizeof(get_value_re_t)),
+    };
+    send_msg(&ans);
+    return RT_EOK;
 }
 static const msg_handle handles[REMOTE_CMD_COUNT] =
 {
