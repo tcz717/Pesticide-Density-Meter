@@ -104,6 +104,10 @@ static rt_err_t get_value_handle(struct remote_msg * msg)
     send_msg(&ans);
     return RT_EOK;
 }
+static rt_err_t set_param_handle(struct remote_msg * msg)
+{
+    return RT_EOK;
+}
 static const msg_handle handles[REMOTE_CMD_COUNT] =
 {
 	RT_NULL,
@@ -111,6 +115,8 @@ static const msg_handle handles[REMOTE_CMD_COUNT] =
     ping_handle,
     RT_NULL,
     get_value_handle,
+    RT_NULL,
+    set_param_handle,
 };
 
 
