@@ -12,6 +12,7 @@ ALIGN(RT_ALIGN_SIZE)
 static rt_uint8_t remote_stack[ 768 ];
 
 unsigned char local_id;
+rt_bool_t connected;
 
 static uint32_t value_table[REMOTE_VALUE_COUNT];
 
@@ -30,7 +31,10 @@ static rt_err_t send_msg(struct remote_msg * msg)
     if(rt_mutex_take(&remote_tx_mut, 20) == RT_EOK)
     {
         rt_device_write(uart,0,&msg->head,3);
-        rt_device_write(uart,0,msg->content.raw,msg->head.len);
+        if(msg->head.len > 0)
+        {
+            rt_device_write(uart,0,msg->content.raw,msg->head.len);
+        }
         rt_device_write(uart,0,&msg->sum,1);
         return RT_EOK;
     }
@@ -55,6 +59,7 @@ static rt_err_t handshack_handle(struct remote_msg * msg)
 	   id.id2 == msg->content.handshack_re->id2)
 	{
 		local_id = msg->content.handshack_re->id;
+        connected = RT_FALSE;
 		return RT_EOK;
 	}
 	return -RT_ERROR;
@@ -70,9 +75,9 @@ static rt_err_t ping_handle(struct remote_msg * msg)
         ping_t ping = {1};
         struct remote_msg ans =
         {
-            REMOTE_HANDSHAKE_SIZE,
+            REMOTE_PING_SIZE,
             local_id,
-            REMOTE_HANDSHAKE,
+            REMOTE_PING,
             (uint8_t *)&ping,
             get_sum((uint8_t *)&ping,sizeof(ping_t)),
         };
@@ -95,9 +100,9 @@ static rt_err_t get_value_handle(struct remote_msg * msg)
     
     struct remote_msg ans =
     {
-        REMOTE_HANDSHAKE_SIZE,
+        REMOTE_GET_VALUE_RE_SIZE,
         local_id,
-        REMOTE_HANDSHAKE,
+        REMOTE_GET_VALUE_RESPONSE,
         (uint8_t *)&get_value_re,
         get_sum((uint8_t *)&get_value_re,sizeof(get_value_re_t)),
     };
@@ -106,6 +111,11 @@ static rt_err_t get_value_handle(struct remote_msg * msg)
 }
 static rt_err_t set_param_handle(struct remote_msg * msg)
 {
+    return RT_EOK;
+}
+static rt_err_t close_handle(struct remote_msg * msg)
+{
+    connected = RT_FALSE;
     return RT_EOK;
 }
 static const msg_handle handles[REMOTE_CMD_COUNT] =
@@ -117,6 +127,7 @@ static const msg_handle handles[REMOTE_CMD_COUNT] =
     get_value_handle,
     RT_NULL,
     set_param_handle,
+    close_handle,
 };
 
 
@@ -192,11 +203,24 @@ rt_err_t remote_error(uint8_t code)
     error_t error = {code};
 	struct remote_msg msg=
 	{
-		REMOTE_HANDSHAKE_SIZE,
+		REMOTE_ERROR_SIZE,
 		local_id,
-		REMOTE_HANDSHAKE,
+		REMOTE_ERROR,
 		(uint8_t *)&error,
 		get_sum((uint8_t *)&error,sizeof(error_t)),
+	};
+	return send_msg(&msg);
+}
+
+rt_err_t remote_close()
+{
+	struct remote_msg msg=
+	{
+		REMOTE_CLOSE_SIZE,
+		local_id,
+		REMOTE_CLOSE,
+		RT_NULL,
+		get_sum(RT_NULL,REMOTE_CLOSE_SIZE),
 	};
 	return send_msg(&msg);
 }
@@ -211,17 +235,21 @@ void remote_set_value(uint8_t id, uint32_t value)
 
 static void task(void * parameter)
 {
-	struct remote_msg msg;
-	while(remote_handshack()!=RT_EOK)
-	{
-		rt_thread_delay(500);
-	}
-	
-	while(1)
-	{
-		receive_msg(&msg);
-		rt_thread_delay(5);
-	}
+    while(1)
+    {
+        struct remote_msg msg;
+        connected = RT_TRUE;
+        while(remote_handshack() != RT_EOK)
+        {
+            rt_thread_delay(500);
+        }
+        
+        while(connected)
+        {
+            receive_msg(&msg);
+            rt_thread_delay(5);
+        }
+    }
 }
 void remote_task_init(const char * uart_name)
 {

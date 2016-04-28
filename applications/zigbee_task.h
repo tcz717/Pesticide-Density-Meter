@@ -14,6 +14,10 @@
 #define REMOTE_CLOSE				7
 
 #define REMOTE_HANDSHAKE_SIZE		12
+#define REMOTE_PING_SIZE		    1
+#define REMOTE_GET_VALUE_RE_SIZE    4
+#define REMOTE_ERROR_SIZE		    1
+#define REMOTE_CLOSE_SIZE		    0
 #define REMOTE_CMD_COUNT			8
 #define IS_REMOTE_CMD(C) ((C) <= REMOTE_CLOSE)
 

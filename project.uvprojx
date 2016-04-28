@@ -423,6 +423,11 @@
               <FileType>1</FileType>
               <FilePath>.\applications\zigbee_task.c</FilePath>
             </File>
+            <File>
+              <FileName>tm7711_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\tm7711_task.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -442,6 +447,11 @@
               <FileName>usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>drivers\usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>tm7711.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\tm7711.c</FilePath>
             </File>
           </Files>
         </Group>
