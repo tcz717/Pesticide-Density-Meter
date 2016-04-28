@@ -12,13 +12,14 @@
 #define REMOTE_GET_VALUE_RESPONSE	5
 #define REMOTE_SET_PARAM			6
 #define REMOTE_CLOSE				7
+#define REMOTE_DEBUG				8
+#define REMOTE_CMD_COUNT			9
 
 #define REMOTE_HANDSHAKE_SIZE		12
 #define REMOTE_PING_SIZE		    1
 #define REMOTE_GET_VALUE_RE_SIZE    4
 #define REMOTE_ERROR_SIZE		    1
 #define REMOTE_CLOSE_SIZE		    0
-#define REMOTE_CMD_COUNT			8
 #define IS_REMOTE_CMD(C) ((C) <= REMOTE_CLOSE)
 
 #define REMOTE_VALUE_COUNT			8
@@ -79,4 +80,9 @@ typedef rt_err_t (*msg_handle)(struct remote_msg *);
 extern unsigned char local_id;
 void remote_task_init(const char *);
 void remote_set_value(uint8_t id, uint32_t value);
+
+rt_err_t remote_handshack(void);
+rt_err_t remote_error(uint8_t code);
+rt_err_t remote_close(void);
+rt_err_t remote_debug(char * str);
 #endif

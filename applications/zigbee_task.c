@@ -1,4 +1,5 @@
 #include "zigbee_task.h"
+#include "string.h"
 
 #define REMOTE_TICK			5
 #define REMOTE_PRIORITY		5
@@ -128,6 +129,7 @@ static const msg_handle handles[REMOTE_CMD_COUNT] =
     RT_NULL,
     set_param_handle,
     close_handle,
+    RT_NULL,
 };
 
 
@@ -221,6 +223,19 @@ rt_err_t remote_close()
 		REMOTE_CLOSE,
 		RT_NULL,
 		get_sum(RT_NULL,REMOTE_CLOSE_SIZE),
+	};
+	return send_msg(&msg);
+}
+rt_err_t remote_debug(char * str)
+{
+    uint8_t len = strlen(str);
+	struct remote_msg msg=
+	{
+		len,
+		local_id,
+		REMOTE_DEBUG,
+		(uint8_t *)str,
+		get_sum((uint8_t *)str,len),
 	};
 	return send_msg(&msg);
 }
