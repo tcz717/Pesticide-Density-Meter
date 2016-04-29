@@ -24,6 +24,8 @@
 
 #define REMOTE_VALUE_COUNT			8
 
+#pragma pack(push)
+#pragma pack(1)
 typedef struct 
 {
 	uint32_t id0;

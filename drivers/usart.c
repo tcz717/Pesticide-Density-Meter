@@ -415,7 +415,7 @@ void rt_hw_usart_init(void)
 
 #if defined(RT_USING_UART1)
     uart = &uart1;
-    config.baud_rate = BAUD_RATE_115200;
+    config.baud_rate = BAUD_RATE_57600;
 
     serial1.ops    = &stm32_uart_ops;
     serial1.config = config;

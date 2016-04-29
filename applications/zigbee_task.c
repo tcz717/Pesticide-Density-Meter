@@ -60,7 +60,7 @@ static rt_err_t handshack_handle(struct remote_msg * msg)
 	   id.id2 == msg->content.handshack_re->id2)
 	{
 		local_id = msg->content.handshack_re->id;
-        connected = RT_FALSE;
+        connected = RT_TRUE;
 		return RT_EOK;
 	}
 	return -RT_ERROR;
@@ -135,22 +135,15 @@ static const msg_handle handles[REMOTE_CMD_COUNT] =
 
 static rt_err_t rx_handle(rt_device_t device, rt_size_t size)
 {
-	while(size)
-	{
-		rt_sem_release(&uart_rx_sem);
-		size--;
-	}
+    rt_sem_release(&uart_rx_sem);
 	return RT_EOK;
 }
 unsigned char getc()
 {
-	if(rt_sem_take(&uart_rx_sem,RT_WAITING_FOREVER)==RT_EOK)
-	{
-		unsigned char ch;
-		rt_device_read(uart,0,&ch,1);
-		return ch;
-	}
-	return 0;
+    unsigned char ch;
+    if (rt_sem_take(&uart_rx_sem, RT_WAITING_FOREVER) != RT_EOK) return 0;
+    while (rt_device_read(uart, 0, &ch, 1) != 1);
+	return ch;
 }
 rt_err_t readf(unsigned char * buffer,int size)
 {
@@ -250,10 +243,11 @@ void remote_set_value(uint8_t id, uint32_t value)
 
 static void task(void * parameter)
 {
+    USART_GetFlagStatus(USART1, USART_FLAG_TC);
     while(1)
     {
         struct remote_msg msg;
-        connected = RT_TRUE;
+        connected = RT_FALSE;
         while(remote_handshack() != RT_EOK)
         {
             rt_thread_delay(500);
@@ -281,5 +275,9 @@ void remote_task_init(const char * uart_name)
 		REMOTE_TICK);
 		
 	uart = rt_device_find(uart_name);
+    rt_device_open(uart, RT_DEVICE_OFLAG_RDWR | RT_DEVICE_FLAG_INT_RX | \
+                       RT_DEVICE_FLAG_STREAM);
 	rt_device_set_rx_indicate(uart,rx_handle);
+        
+    rt_thread_startup(&remote_thread);
 }
