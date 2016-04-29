@@ -15,6 +15,9 @@
 #define TIMER                       TIM6
 #define TIMER_WAIT                  5 
 
+#define timer_init(a)
+#define delay_us(a,us)                for(int _i=0;_i<(us);i++) {__nop();}
+
 static struct rt_semaphore din_sem;
 static rt_bool_t handled = RT_TRUE;
 
