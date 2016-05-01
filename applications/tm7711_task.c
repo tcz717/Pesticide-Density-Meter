@@ -34,7 +34,7 @@ static void task(void * parameter)
         sum /= AVE_TIME;
         raw_mass = ((uint64_t)sum)*1000*2000>>23>>7;
         remote_set_value(TM7711_AD_AVE ,sum);
-        remote_set_value(TM7711_AD_MASS ,((uint64_t)sum)*1000*2000>>23>>7);
+        remote_set_value(TM7711_AD_MASS ,raw_mass);
 //        remote_debug("tm7711 got value");
         rt_thread_delay(1);
     }
