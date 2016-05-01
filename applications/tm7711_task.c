@@ -4,6 +4,13 @@
 #define TM7711_AD_AVE       0
 #define TM7711_AD_CUR       1
 #define TM7711_AD_MASS      2
+#define TM7711_AD_RMASS     3
+
+#define TM7711_AD_A         0
+#define TM7711_AD_B         1
+
+#define TM7711_AD_A_DEFAULT 685
+#define TM7711_AD_B_DEFAULT -251
 
 #define AVE_TIME            5
 
@@ -19,8 +26,9 @@ static void task(void * parameter)
     remote_debug("tm7711 init finished");
     while(1)
     {
-        uint32_t sum = 0;
-        uint32_t raw_mass;
+        int32_t sum = 0;
+        int32_t raw_mass;
+        int32_t real_mass;
         for(int i = 0; i < AVE_TIME; i++)
         {
             uint32_t v;
@@ -33,14 +41,18 @@ static void task(void * parameter)
         
         sum /= AVE_TIME;
         raw_mass = ((uint64_t)sum)*1000*2000>>23>>7;
+        real_mass = remote_get_param(TM7711_AD_A) * (raw_mass + remote_get_param(TM7711_AD_B)) / 1000;
+        
         remote_set_value(TM7711_AD_AVE ,sum);
         remote_set_value(TM7711_AD_MASS ,raw_mass);
-//        remote_debug("tm7711 got value");
+        remote_set_value(TM7711_AD_RMASS ,real_mass);
         rt_thread_delay(1);
     }
 }
 void tm7711_task_init()
 {
+    remote_set_param(TM7711_AD_A, TM7711_AD_A_DEFAULT);
+    remote_set_param(TM7711_AD_B, TM7711_AD_B_DEFAULT);
 	rt_thread_init(&tm7711_thread,
 		"tm7711",
 		task,
