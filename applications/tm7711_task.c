@@ -20,6 +20,7 @@ static void task(void * parameter)
     while(1)
     {
         uint32_t sum = 0;
+        uint32_t raw_mass;
         for(int i = 0; i < AVE_TIME; i++)
         {
             uint32_t v;
@@ -31,8 +32,9 @@ static void task(void * parameter)
         }
         
         sum /= AVE_TIME;
+        raw_mass = ((uint64_t)sum)*1000*2000>>23>>7;
         remote_set_value(TM7711_AD_AVE ,sum);
-        remote_set_value(TM7711_AD_MASS ,(sum>>7)*1000*2000>>23);
+        remote_set_value(TM7711_AD_MASS ,((uint64_t)sum)*1000*2000>>23>>7);
 //        remote_debug("tm7711 got value");
         rt_thread_delay(1);
     }
