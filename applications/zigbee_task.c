@@ -16,6 +16,7 @@ unsigned char local_id;
 rt_bool_t connected;
 
 static uint32_t value_table[REMOTE_VALUE_COUNT];
+static int32_t param_table[REMOTE_PARAM_COUNT];
 
 void get_chip_id(handshack_t * h)
 {
@@ -114,7 +115,16 @@ static rt_err_t get_value_handle(struct remote_msg * msg)
 }
 static rt_err_t set_param_handle(struct remote_msg * msg)
 {
-    return RT_EOK;
+    uint8_t id = msg->content.set_param->id;
+    if(id < REMOTE_PARAM_COUNT)
+    {
+        param_table[id] = msg->content.set_param->value;
+        return RT_EOK;
+    }
+    else
+    {
+        return -RT_ENOSYS;
+    }
 }
 static rt_err_t close_handle(struct remote_msg * msg)
 {
@@ -244,6 +254,14 @@ void remote_set_value(uint8_t id, uint32_t value)
     {
         value_table[id] = value;
     }
+}
+int32_t remote_get_param(uint8_t id)
+{
+    if(id < REMOTE_PARAM_COUNT)
+    {
+        return param_table[id];
+    }
+    return 0;
 }
 
 static void task(void * parameter)

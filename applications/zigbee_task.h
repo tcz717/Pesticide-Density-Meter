@@ -23,6 +23,7 @@
 #define IS_REMOTE_CMD(C) ((C) <= REMOTE_CLOSE)
 
 #define REMOTE_VALUE_COUNT			8
+#define REMOTE_PARAM_COUNT			8
 
 #pragma pack(push)
 #pragma pack(1)
@@ -56,6 +57,11 @@ typedef struct
 	uint8_t id;
     uint32_t value;
 } get_value_re_t;
+typedef struct 
+{
+	uint8_t id;
+    int32_t value;
+} set_param_t;
 struct remote_msg
 {
 	struct
@@ -73,6 +79,7 @@ struct remote_msg
         error_t *error;
         get_value_t *get_value;
         get_value_re_t *get_value_re;
+        set_param_t *set_param;
 	} content;
 	uint8_t sum;
 };
@@ -82,6 +89,7 @@ typedef rt_err_t (*msg_handle)(struct remote_msg *);
 extern unsigned char local_id;
 void remote_task_init(const char *);
 void remote_set_value(uint8_t id, uint32_t value);
+int32_t remote_get_param(uint8_t id);
 
 rt_err_t remote_handshack(void);
 rt_err_t remote_error(uint8_t code);
