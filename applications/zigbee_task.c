@@ -37,6 +37,8 @@ static rt_err_t send_msg(struct remote_msg * msg)
             rt_device_write(uart,0,msg->content.raw,msg->head.len);
         }
         rt_device_write(uart,0,&msg->sum,1);
+        
+        rt_mutex_release(&remote_tx_mut);
         return RT_EOK;
     }
     else
@@ -138,18 +140,18 @@ static rt_err_t rx_handle(rt_device_t device, rt_size_t size)
     rt_sem_release(&uart_rx_sem);
 	return RT_EOK;
 }
-unsigned char getc()
+rt_bool_t getc(uint8_t * ch)
 {
-    unsigned char ch;
-    if (rt_sem_take(&uart_rx_sem, RT_WAITING_FOREVER) != RT_EOK) return 0;
-    while (rt_device_read(uart, 0, &ch, 1) != 1);
-	return ch;
+    if (rt_sem_take(&uart_rx_sem, 5) != RT_EOK) return RT_FALSE;
+    while (rt_device_read(uart, 0, ch, 1) != 1);
+	return RT_TRUE;
 }
 rt_err_t readf(unsigned char * buffer,int size)
 {
 	for(int i=0;i<size;i++)
 	{
-		buffer[i] = getc();
+		if(!getc(&buffer[i]))
+            return -RT_ETIMEOUT;
 	}
 	return RT_EOK;
 }
@@ -157,14 +159,17 @@ static rt_err_t receive_msg(struct remote_msg * msg)
 {
 	while(1)
 	{
-		readf((uint8_t*)&msg->head,3);
+		if(readf((uint8_t*)&msg->head,3)!=RT_EOK)
+            return -RT_ETIMEOUT;
 		
 		if(!IS_REMOTE_CMD(msg->head.cmd))
 			return -RT_ERROR;
 		
-		readf(msg_buf, msg->head.len);
+		if(readf(msg_buf, msg->head.len)!=RT_EOK)
+            return -RT_ETIMEOUT;
 		msg->content.raw = msg_buf;
-		msg->sum = getc();
+		if(!getc(&msg->sum))
+            return -RT_ETIMEOUT;
 		
 		if(msg->head.id!=local_id)
 			continue;
@@ -250,8 +255,10 @@ static void task(void * parameter)
         connected = RT_FALSE;
         while(remote_handshack() != RT_EOK)
         {
-            rt_thread_delay(500);
+            rt_thread_delay(50);
         }
+        
+        remote_debug("Handshack OK");
         
         while(connected)
         {
