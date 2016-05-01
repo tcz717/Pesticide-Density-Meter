@@ -55,7 +55,7 @@ typedef struct
 typedef struct 
 {
 	uint8_t id;
-    uint32_t value;
+    int32_t value;
 } get_value_re_t;
 typedef struct 
 {
@@ -88,8 +88,9 @@ typedef rt_err_t (*msg_handle)(struct remote_msg *);
 
 extern unsigned char local_id;
 void remote_task_init(const char *);
-void remote_set_value(uint8_t id, uint32_t value);
+void remote_set_value(uint8_t id, int32_t value);
 int32_t remote_get_param(uint8_t id);
+void remote_set_param(uint8_t id, int32_t value);
 
 rt_err_t remote_handshack(void);
 rt_err_t remote_error(uint8_t code);

@@ -15,7 +15,7 @@ static rt_uint8_t remote_stack[ 768 ];
 unsigned char local_id;
 rt_bool_t connected;
 
-static uint32_t value_table[REMOTE_VALUE_COUNT];
+static int32_t value_table[REMOTE_VALUE_COUNT];
 static int32_t param_table[REMOTE_PARAM_COUNT];
 
 void get_chip_id(handshack_t * h)
@@ -248,11 +248,18 @@ rt_err_t remote_debug(char * str)
 	return send_msg(&msg);
 }
 
-void remote_set_value(uint8_t id, uint32_t value)
+void remote_set_value(uint8_t id, int32_t value)
 {
     if(id < REMOTE_VALUE_COUNT)
     {
         value_table[id] = value;
+    }
+}
+void remote_set_param(uint8_t id, int32_t value)
+{
+    if(id < REMOTE_PARAM_COUNT)
+    {
+        param_table[id] = value;
     }
 }
 int32_t remote_get_param(uint8_t id)
