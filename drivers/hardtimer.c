@@ -4,7 +4,9 @@ void timer_init(TIM_TypeDef * tim)
 {
 	TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 	
-	if(tim==TIM6)
+	if(tim==TIM4)
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+	else if(tim==TIM6)
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
 	
 	TIM_TimeBaseStructure.TIM_Period = 0xffff; 

@@ -1,5 +1,6 @@
 #include "tm7711.h"
 #include "stm32f10x.h"                  // Device header
+//#include "hardtimer.h"
 
 #define DIN_PIN                     GPIO_Pin_6
 #define DIN_NVIC                    EXTI9_5_IRQn
@@ -7,16 +8,16 @@
 #define DIN_PortSource              GPIO_PortSourceGPIOB
 #define DIN_PinSource               GPIO_PinSource6
 
-#define CLK_PIN GPIO_Pin_7
+#define CLK_PIN                     GPIO_Pin_7
 
 #define TM7711_GPIO                 GPIOB
 #define TM7711_RCC_GPIO             RCC_APB2Periph_GPIOB
 
-#define TIMER                       TIM6
-#define TIMER_WAIT                  5 
+#define TIMER                       TIM4
+#define TIMER_WAIT                  5
 
 #define timer_init(a)
-#define delay_us(a,us)                for(int _i=0;_i<(us);i++) {__nop();}
+#define delay_us(a,us)                for(int _i=0;_i<(us);_i++) {__nop();}
 
 static struct rt_semaphore din_sem;
 static rt_bool_t handled = RT_TRUE;
@@ -34,8 +35,6 @@ static void GPIO_Configure()
 	gpio.GPIO_Mode = GPIO_Mode_Out_PP;
 	gpio.GPIO_Pin = CLK_PIN;
 	GPIO_Init(TM7711_GPIO,&gpio);
-	
-	GPIO_EXTILineConfig(DIN_PortSource, DIN_PinSource);
 }
 
 static void EXTI_Configure()
@@ -47,14 +46,16 @@ static void EXTI_Configure()
 	exti.EXTI_Mode = EXTI_Mode_Interrupt;
 	exti.EXTI_LineCmd = ENABLE;
 	EXTI_Init(&exti);
+	
+	GPIO_EXTILineConfig(DIN_PortSource, DIN_PinSource);
 }
 
 static void NVIC_Configure()
 {
 	NVIC_InitTypeDef nvic;
 	nvic.NVIC_IRQChannel = DIN_NVIC;
-	nvic.NVIC_IRQChannelPreemptionPriority = 2;
-	nvic.NVIC_IRQChannelSubPriority = 2;
+	nvic.NVIC_IRQChannelPreemptionPriority = 1;
+	nvic.NVIC_IRQChannelSubPriority = 0;
 	nvic.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic);
 }
@@ -106,18 +107,22 @@ void set_mode(uint8_t mode)
 rt_err_t TM7711_GetAD(uint32_t * result, uint8_t mode)
 {
     TM7711_Awake();
-	if(rt_sem_take(&din_sem,RT_WAITING_FOREVER)==RT_EOK)
+	if(!handled && (GPIO_ReadInputDataBit(TM7711_GPIO, DIN_PIN) == Bit_RESET ||
+        rt_sem_take(&din_sem,10) == RT_EOK))
 	{
+        rt_enter_critical();
         *result = read24();
         set_mode(mode);
+        rt_exit_critical();
+        
         handled = RT_TRUE;
         return RT_EOK;
 	}
     handled = RT_TRUE;
-    return RT_EIO;
+    return -RT_EIO;
 }
 
-void EXTI6_IRQHandler(void)
+void EXTI9_5_IRQHandler(void)
 {
     /* enter interrupt */
     rt_interrupt_enter();
