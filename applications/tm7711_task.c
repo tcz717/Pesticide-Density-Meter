@@ -9,8 +9,8 @@
 #define TM7711_AD_A         0
 #define TM7711_AD_B         1
 
-#define TM7711_AD_A_DEFAULT 685
-#define TM7711_AD_B_DEFAULT -251
+#define TM7711_AD_A_DEFAULT 397
+#define TM7711_AD_B_DEFAULT 251
 
 #define AVE_TIME            5
 
@@ -29,6 +29,7 @@ static void task(void * parameter)
         int32_t sum = 0;
         int32_t raw_mass;
         int32_t real_mass;
+        int32_t a,b;
         for(int i = 0; i < AVE_TIME; i++)
         {
             uint32_t v;
@@ -40,8 +41,10 @@ static void task(void * parameter)
         }
         
         sum /= AVE_TIME;
+        a = remote_get_param(TM7711_AD_A);
+        b = remote_get_param(TM7711_AD_B);
         raw_mass = ((uint64_t)sum)*1000*2000>>23>>7;
-        real_mass = remote_get_param(TM7711_AD_A) * (raw_mass + remote_get_param(TM7711_AD_B)) / 1000;
+        real_mass = (raw_mass - b) * 100 / (a - b);
         
         remote_set_value(TM7711_AD_AVE ,sum);
         remote_set_value(TM7711_AD_MASS ,raw_mass);
