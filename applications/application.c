@@ -41,6 +41,7 @@
 #endif
 
 #include "zigbee_task.h"
+#include "led.h"
 
 #ifdef RT_USING_RTGUI
 rt_bool_t cali_setup(void)
@@ -115,6 +116,7 @@ int rt_application_init(void)
     extern void tm7711_task_init(void);
 	remote_task_init("uart1");
     tm7711_task_init();
+    rt_hw_led_init();
 	
 #if (RT_THREAD_PRIORITY_MAX == 32)
     init_thread = rt_thread_create("init",
