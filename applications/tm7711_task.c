@@ -35,7 +35,7 @@ static void task(void * parameter)
             uint32_t v;
             while(TM7711_GetAD(&v, TM7711_MODE_AD_10HZ) != RT_EOK &&
                 v != 0xFFFFFF)
-                __nop();
+                rt_thread_delay(1);
             remote_set_value(TM7711_AD_CUR ,v);
             sum += v;
         }
@@ -49,7 +49,6 @@ static void task(void * parameter)
         remote_set_value(TM7711_AD_AVE ,sum);
         remote_set_value(TM7711_AD_MASS ,raw_mass);
         remote_set_value(TM7711_AD_RMASS ,real_mass);
-        rt_thread_delay(1);
     }
 }
 void tm7711_task_init()
