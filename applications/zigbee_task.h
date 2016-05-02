@@ -88,6 +88,7 @@ typedef rt_err_t (*msg_handle)(struct remote_msg *);
 
 extern unsigned char local_id;
 void remote_task_init(const char *);
+int32_t remote_get_value(uint8_t id);
 void remote_set_value(uint8_t id, int32_t value);
 int32_t remote_get_param(uint8_t id);
 void remote_set_param(uint8_t id, int32_t value);

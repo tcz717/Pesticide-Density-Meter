@@ -208,6 +208,19 @@ rt_err_t remote_handshack()
 	err = receive_msg(&msg);
 	return err;
 }
+rt_err_t remote_ping()
+{
+    ping_t ping = {0};
+    struct remote_msg ans =
+    {
+        REMOTE_PING_SIZE,
+        local_id,
+        REMOTE_PING,
+        (uint8_t *)&ping,
+        get_sum((uint8_t *)&ping,sizeof(ping_t)),
+    };
+	return send_msg(&ans);
+}
 rt_err_t remote_error(uint8_t code)
 {
     error_t error = {code};
@@ -255,6 +268,14 @@ void remote_set_value(uint8_t id, int32_t value)
         value_table[id] = value;
     }
 }
+int32_t remote_get_value(uint8_t id)
+{
+    if(id < REMOTE_VALUE_COUNT)
+    {
+        return value_table[id];
+    }
+    return 0;
+}
 void remote_set_param(uint8_t id, int32_t value)
 {
     if(id < REMOTE_PARAM_COUNT)
@@ -277,6 +298,7 @@ static void task(void * parameter)
     while(1)
     {
         struct remote_msg msg;
+        uint32_t retry = 0;
         connected = RT_FALSE;
         while(remote_handshack() != RT_EOK)
         {
@@ -287,7 +309,16 @@ static void task(void * parameter)
         
         while(connected)
         {
-            receive_msg(&msg);
+            if(receive_msg(&msg) != RT_EOK)
+                retry++;
+            else
+                retry = 0;
+            
+            if(retry > 2002)
+                connected = RT_FALSE;
+            else if(retry > 2000)
+                remote_ping();
+            
             rt_thread_delay(5);
         }
     }
